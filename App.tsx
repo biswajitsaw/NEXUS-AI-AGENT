@@ -13,8 +13,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
 
-// Custom components moved to top to ensure availability during render
-const BrainCircuit = ({ className }: { className?: string }) => (
+// Renamed to avoid collision with potential Lucide BrainCircuit icon
+const LocalBrainIcon = ({ className }: { className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     viewBox="0 0 24 24" 
@@ -339,7 +339,7 @@ const App: React.FC = () => {
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-white rounded-2xl border border-dashed border-slate-300">
             <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-              <BrainCircuit className="w-10 h-10 text-indigo-400" />
+              <LocalBrainIcon className="w-10 h-10 text-indigo-400" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Ready to Orchestrate?</h2>
             <p className="text-slate-500 max-w-md">
@@ -403,7 +403,7 @@ const App: React.FC = () => {
       <footer className="mt-20 border-t border-slate-100 py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 text-center">
            <div className="flex items-center justify-center gap-2 mb-4 grayscale opacity-50">
-             <BrainCircuit className="w-5 h-5" />
+             <LocalBrainIcon className="w-5 h-5" />
              <span className="font-bold text-slate-600">EDUTECH NEXUS</span>
            </div>
            <p className="text-sm text-slate-400">Advanced AI Orchestration for Modern Classrooms &copy; 2025</p>
