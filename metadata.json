@@ -1,0 +1,8 @@
+{
+  "name": "Copy of EduTech Nexus",
+  "description": "An AI Orchestrator for Smart Classrooms, personalizing curriculum paths based on individual student profiles and learning goals.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
