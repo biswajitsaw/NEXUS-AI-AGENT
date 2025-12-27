@@ -3,11 +3,15 @@ import { LessonParams, AIResponse } from "../types";
 
 export const generatePersonalizedPath = async (params: LessonParams): Promise<AIResponse> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing. Please ensure the environment variable is configured.");
+  
+  // Robust check for missing or improperly injected keys
+  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+    throw new Error(
+      "Critical Error: Gemini API Key is missing. Action Required: Please go to your Vercel Dashboard > Project Settings > Environment Variables, add 'API_KEY', and trigger a new Deployment."
+    );
   }
 
-  // Initialize AI client inside the function call to ensure it uses the latest env state
+  // Initialize client per-request to use the latest injected environment state
   const ai = new GoogleGenAI({ apiKey });
   
   const studentDataStr = params.students
@@ -64,10 +68,10 @@ export const generatePersonalizedPath = async (params: LessonParams): Promise<AI
 
   try {
     const text = response.text;
-    if (!text) throw new Error("Empty response from AI");
+    if (!text) throw new Error("Empty response from AI engine.");
     return JSON.parse(text.trim()) as AIResponse;
   } catch (e) {
     console.error("Failed to parse AI response", e);
-    throw new Error("The AI response was invalid. Please try again.");
+    throw new Error("The AI response was invalid. Please try a different topic or learning goal.");
   }
 };

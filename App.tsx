@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import StudentForm from './components/StudentForm';
 import ResultDisplay from './components/ResultDisplay';
@@ -7,13 +7,12 @@ import { generatePersonalizedPath } from './services/geminiService';
 import { 
   Send, Loader2, Sparkles, AlertCircle, BarChart3, Book, Users, 
   TrendingUp, Calendar, Zap, Settings, Shield, Bell, LogOut, 
-  ChevronRight, User, Mail, ShieldCheck, Globe
+  ChevronRight, User, Mail, ShieldCheck, Globe, ExternalLink
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
 
-// Renamed to avoid collision with potential Lucide BrainCircuit icon
 const LocalBrainIcon = ({ className }: { className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
@@ -58,6 +57,16 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isConfigError, setIsConfigError] = useState(false);
+
+  // Check for API Key configuration on load
+  useEffect(() => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey || apiKey === "undefined" || apiKey === "") {
+      setIsConfigError(true);
+      setError("Configuration Error: The Gemini API Key is not set up correctly.");
+    }
+  }, []);
 
   const handleAddStudent = (student: StudentProfile) => {
     setParams(prev => ({
@@ -75,6 +84,12 @@ const App: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isConfigError) {
+      setError("Cannot proceed: API Key is missing. Please check your environment variables in Vercel.");
+      return;
+    }
+
     if (!params.topic || !params.gradeLevel) {
       setError("Please fill in basic lesson details.");
       return;
@@ -91,6 +106,10 @@ const App: React.FC = () => {
       setResult(data);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
+      // Re-evaluate config error if the service explicitly throws about the key
+      if (err.message?.includes("API Key")) {
+        setIsConfigError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -203,11 +222,18 @@ const App: React.FC = () => {
               {[
                 { icon: Shield, title: 'Privacy Controls', desc: 'Manage how student data is anonymized and stored.', toggle: true },
                 { icon: Bell, title: 'Notification Center', desc: 'Get alerts when AI detects a critical learning gap.', toggle: true },
-                { icon: ShieldCheck, title: 'API Management', desc: 'Your Gemini API connection is active and healthy.', toggle: false, status: 'Active' },
+                { 
+                  icon: ShieldCheck, 
+                  title: 'API Management', 
+                  desc: isConfigError ? 'Connection failed: API_KEY environment variable not found.' : 'Your Gemini API connection is active and healthy.', 
+                  toggle: false, 
+                  status: isConfigError ? 'Error' : 'Active',
+                  error: isConfigError
+                },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-slate-400">
+                    <div className={`w-10 h-10 bg-white rounded-lg flex items-center justify-center ${item.error ? 'text-red-500' : 'text-slate-400'}`}>
                       <item.icon className="w-5 h-5" />
                     </div>
                     <div>
@@ -220,26 +246,12 @@ const App: React.FC = () => {
                       <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
                     </div>
                   ) : (
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase">
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${item.error ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'}`}>
                       {item.status}
                     </span>
                   )}
                 </div>
               ))}
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center">
-                  <LogOut className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Sign Out</p>
-                  <p className="text-xs text-slate-500">Securely end your current session.</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-slate-300" />
             </div>
           </div>
         </div>
@@ -250,6 +262,29 @@ const App: React.FC = () => {
   const renderPlanner = () => (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div className="lg:col-span-4 space-y-6">
+        {/* Configuration Alert Banner */}
+        {isConfigError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-pulse">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-red-900">Missing API Configuration</h3>
+                <p className="text-xs text-red-700 mt-1">
+                  The application cannot connect to Gemini. Please add <code className="bg-red-100 px-1 rounded text-red-900 font-mono">API_KEY</code> to your Vercel Project Settings.
+                </p>
+                <a 
+                  href="https://vercel.com/docs/projects/environment-variables" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-red-800 uppercase tracking-wider mt-3 hover:underline"
+                >
+                  Troubleshoot Vercel <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" />
@@ -306,19 +341,25 @@ const App: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-red-600">{error}</span>
+              <div className={`p-3 border rounded-lg flex items-start gap-2 ${isConfigError ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isConfigError ? 'text-red-500' : 'text-amber-500'}`} />
+                <span className={`text-xs font-medium ${isConfigError ? 'text-red-700' : 'text-amber-700'}`}>{error}</span>
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-3 rounded-xl transition shadow-md shadow-indigo-200 flex items-center justify-center gap-2"
+              disabled={loading || isConfigError}
+              className={`w-full font-bold py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2 ${
+                isConfigError 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+              }`}
             >
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Orchestrating...</>
+              ) : isConfigError ? (
+                <><Shield className="w-4 h-4" /> API Unavailable</>
               ) : (
                 <><Send className="w-4 h-4" /> Generate Learning Path</>
               )}

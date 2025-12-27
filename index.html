@@ -15,14 +15,11 @@
             margin: 0;
         }
     </style>
-    <!-- Polyfill for process.env to prevent ReferenceErrors in ESM/browser environments -->
+    <!-- Basic polyfill to prevent crashes; Vite 'define' handles the actual API_KEY injection -->
     <script>
-      window.process = { 
-        env: { 
-          NODE_ENV: 'production',
-          API_KEY: '' 
-        } 
-      };
+      if (typeof window.process === 'undefined') {
+        window.process = { env: {} };
+      }
     </script>
 <script type="importmap">
 {
@@ -35,8 +32,8 @@
     "recharts": "https://esm.sh/recharts@2.13.3?deps=react@19.0.0,react-dom@19.0.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.0"
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
